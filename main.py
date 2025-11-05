@@ -1,5 +1,9 @@
+from voltron import fuzz
+import sys
+
 def main():
-    print("Hello from voltron!")
+    ans = fuzz.fuzz_one()
+    print(f"answer: {ans}")
 
 
 if __name__ == "__main__":
