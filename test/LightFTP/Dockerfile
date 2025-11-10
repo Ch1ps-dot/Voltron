@@ -42,10 +42,9 @@ WORKDIR /home/ubuntu
 ARG MAKE_OPT
 
 # Set up fuzzers
-# RUN git clone https://github.com/profuzzbench/aflnet.git && \
-#     cd aflnet && \
-#     make clean all $MAKE_OPT && \
-#     cd llvm_mode && make $MAKE_OPT
+RUN git clone https://github.com/profuzzbench/aflnet.git
+    # make clean all $MAKE_OPT && \
+    # cd llvm_mode && make $MAKE_OPT
 
 # RUN git clone https://github.com/profuzzbench/aflnwe.git && \
 #     cd aflnwe && \
@@ -58,12 +57,12 @@ RUN git clone https://github.com/Ch1ps-dot/Voltron.git && \
 
 # Set up environment variables for AFLNet
 ENV WORKDIR="/home/ubuntu/experiments"
-ENV AFLNET="/home/ubuntu/aflnet"
-ENV PATH="${PATH}:${AFLNET}:/home/ubuntu/.local/bin:${WORKDIR}"
-ENV AFL_PATH="${AFLNET}"
-ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
-    AFL_SKIP_CPUFREQ=1 \
-    AFL_NO_AFFINITY=1
+# ENV AFLNET="/home/ubuntu/aflnet"
+# ENV PATH="${PATH}:${AFLNET}:/home/ubuntu/.local/bin:${WORKDIR}"
+# ENV AFL_PATH="${AFLNET}"
+# ENV AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 \
+#     AFL_SKIP_CPUFREQ=1 \
+#     AFL_NO_AFFINITY=1
 
 
 RUN mkdir $WORKDIR
@@ -72,7 +71,7 @@ COPY --chown=ubuntu:ubuntu fuzzing.patch ${WORKDIR}/fuzzing.patch
 COPY --chown=ubuntu:ubuntu gcov.patch ${WORKDIR}/gcov.patch
 
 # Set up environment variables for ASAN
-env ASAN_OPTIONS='abort_on_error=1:symbolize=0:detect_leaks=0:detect_stack_use_after_return=1:detect_container_overflow=0:poison_array_cookie=0:malloc_fill_byte=0:max_malloc_fill_size=16777216'
+ENV ASAN_OPTIONS='abort_on_error=1:symbolize=0:detect_leaks=0:detect_stack_use_after_return=1:detect_container_overflow=0:poison_array_cookie=0:malloc_fill_byte=0:max_malloc_fill_size=16777216'
 
 # Download and compile LightFTP for fuzzing
 RUN cd $WORKDIR && \
@@ -81,9 +80,17 @@ RUN cd $WORKDIR && \
     git checkout 5980ea1 && \
     patch -p1 < ${WORKDIR}/fuzzing.patch && \
     cd Source/Release && \
-    AFL_USE_ASAN=1 CC=afl-clang-fast make clean all $MAKE_OPT
+    CC=clang CXX=clang++ CFLAGS="-fsanitize=address -g -O1" CXXFLAGS="-fsanitize=address -g -O1" LDFLAGS="-fsanitize=address" \
+    make clean all $MAKE_OPT
 
 # Set up LightFTP for fuzzing
+# RUN cd ${WORKDIR}/LightFTP/Source/Release && \
+#     cp ${AFLNET}/tutorials/lightftp/fftp.conf ./ && \
+#     cp ${AFLNET}/tutorials/lightftp/ftpclean.sh ./ && \
+#     cp -r ${AFLNET}/tutorials/lightftp/certificate /home/ubuntu && \
+#     mkdir /home/ubuntu/ftpshare
+
+# Set up LightFTP without afl-clang
 RUN cd ${WORKDIR}/LightFTP/Source/Release && \
     cp ${AFLNET}/tutorials/lightftp/fftp.conf ./ && \
     cp ${AFLNET}/tutorials/lightftp/ftpclean.sh ./ && \
